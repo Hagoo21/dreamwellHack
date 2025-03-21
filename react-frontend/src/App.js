@@ -12,6 +12,10 @@ function App() {
   const [timestamps, setTimestamps] = useState([]);
   const [currentVideoId, setCurrentVideoId] = useState(null);
   const [isProcessingTranscript, setIsProcessingTranscript] = useState(false);
+  const [processedVideos, setProcessedVideos] = useState(new Set());
+  const [currentTime, setCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   const extractTimestamps = (text) => {
     console.log("Extracting timestamps from:", text);
@@ -46,6 +50,7 @@ function App() {
 
   useEffect(() => {
     let messageListener;
+    let progressInterval;
     
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
       messageListener = (message, sender, sendResponse) => {
@@ -58,24 +63,49 @@ function App() {
       };
       
       chrome.runtime.onMessage.addListener(messageListener);
+
+      // Set up interval to track video progress
+      progressInterval = setInterval(() => {
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+          if (tabs[0] && tabs[0].url.includes('youtube.com/watch')) {
+            chrome.tabs.sendMessage(tabs[0].id, {action: "getVideoTime"}, response => {
+              if (response) {
+                console.log("Received video time response:", response);
+                // Ensure we're working with numbers
+                const currentTime = parseFloat(response.currentTime) || 0;
+                const progress = parseFloat(response.progress) || 0;
+                const duration = parseFloat(response.duration) || 0;
+                
+                setCurrentTime(currentTime);
+                setProgress(progress);
+                setVideoDuration(duration);
+              }
+            });
+          }
+        });
+      }, 1000); // Update every second
     }
 
     return () => {
       if (messageListener) {
         chrome.runtime.onMessage.removeListener(messageListener);
       }
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
     };
   }, [currentVideoId]);
 
   useEffect(() => {
     const processTranscript = async () => {
-      if (!currentVideoId) return;
+      if (!currentVideoId || processedVideos.has(currentVideoId)) return;
       
       setIsProcessingTranscript(true);
       try {
         const response = await axios.get(`http://localhost:8000/public/transcript/${currentVideoId}`);
         if (response.data.status === "completed") {
           console.log("Transcript processing completed");
+          setProcessedVideos(prev => new Set([...prev, currentVideoId]));
         }
       } catch (error) {
         console.error("Error processing transcript:", error);
@@ -85,7 +115,7 @@ function App() {
     };
 
     processTranscript();
-  }, [currentVideoId]);
+  }, [currentVideoId, processedVideos]);
 
   const handlePromptSubmit = async (userPrompt) => {
     setResults(prev => [...prev, { 
@@ -176,7 +206,12 @@ function App() {
 
   return (
     <div className="App">
-      <ProgressBar timestamps={timestamps} />
+      <ProgressBar 
+        timestamps={timestamps} 
+        currentTime={currentTime}
+        duration={videoDuration}
+        progress={progress}
+      />
       <ResultsArea 
         results={results} 
         isStreaming={isStreaming}

@@ -1,32 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './ProgressBar.css';
 
-const ProgressBar = ({ timestamps = [] }) => {
-  console.log("ProgressBar received timestamps:", timestamps);
-  const [currentTime, setCurrentTime] = useState('0:00');
-  const [progress, setProgress] = useState(0);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [hasVideo, setHasVideo] = useState(false);
-  const [videoDuration, setVideoDuration] = useState(0);
-
-  useEffect(() => {
-    let interval;
-    
-    // Web app behavior
-    setHasVideo(true);
-    setVideoUrl('https://www.youtube.com/watch?v=example');
-    setVideoDuration(600);
-    
-    interval = setInterval(() => {
-      setProgress(prev => (prev + 1) % 100);
-      const totalSeconds = Math.floor((progress / 100) * 600);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      setCurrentTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [progress]);
+const ProgressBar = ({ timestamps = [], currentTime = 0, duration = 0, progress = 0 }) => {
+  console.log("ProgressBar received props:", { timestamps, currentTime, duration, progress });
+  
+  const formatTime = (seconds) => {
+    if (typeof seconds !== 'number' || isNaN(seconds)) {
+      console.log("Invalid seconds value:", seconds);
+      return "0:00";
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const timestampToSeconds = (timestamp) => {
     const parts = timestamp.split(':').map(Number);
@@ -52,18 +38,16 @@ const ProgressBar = ({ timestamps = [] }) => {
     }
   };
 
+  const hasVideo = duration > 0;
+
   return (
     <div className="progress-container">
       <div className="progress-wrapper">
         <div className="url-container">
-          <span className="url-text">
-            {hasVideo ? `URL: ${videoUrl}` : 'No video detected'}
-          </span>
           <div className="progress-bar" style={{ width: `${progress}%` }} />
           {timestamps.map((timestamp, index) => {
             const seconds = timestampToSeconds(timestamp);
-            const position = (seconds / videoDuration) * 100;
-            console.log("Rendering timestamp:", timestamp, "at position:", position);
+            const position = (seconds / duration) * 100;
             
             return (
               <div
@@ -86,7 +70,7 @@ const ProgressBar = ({ timestamps = [] }) => {
               opacity: hasVideo ? 1 : 0
             }}
           >
-            {currentTime}
+            {formatTime(currentTime)}
           </div>
         )}
       </div>

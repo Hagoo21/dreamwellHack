@@ -17,7 +17,7 @@ router = APIRouter()
 # MongoDB setup
 MONGODB_URI = os.getenv("MONGODB_URI")
 client = MongoClient(MONGODB_URI)
-db = client["Dreamwell2025"]
+db = client["Hackville2025"]
 users_collection = db["users"]
 youtube_collection = db["youtube"]
 
@@ -170,7 +170,7 @@ async def get_gpt_response(request: GPTRequest):
         Use the provided context from the video transcript to answer the user's question.
         Include relevant timestamps from the context in your response when appropriate.
         Only provide one time stamps where the answer to their search will begin.
-        Provide the time stamp in the form HH:MM:SS (hour, minute, second).
+        Provide the time stamp in the form HH:MM:SS (hour, minute, second) Dont provide it if it's not relevant to the question.
         If you cannot find relevant information in the context, say so."""
 
         messages = [
