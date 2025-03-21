@@ -17,7 +17,7 @@ router = APIRouter()
 # MongoDB setup
 MONGODB_URI = os.getenv("MONGODB_URI")
 client = MongoClient(MONGODB_URI)
-db = client["Hackville2025"]
+db = client["Dreamwell2025"]
 users_collection = db["users"]
 youtube_collection = db["youtube"]
 

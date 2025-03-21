@@ -1,13 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import public, private
-import os
+from routes import public
 
 app = FastAPI()
 
 # Include routes
 app.include_router(public.router, prefix="/public", tags=["Public"])
-app.include_router(private.router, prefix="/private", tags=["Private"])
 
 # Add CORS middleware with expanded configuration
 app.add_middleware(
@@ -20,4 +18,4 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the FastAPI Auth0 Backend"}
+    return {"message": "Welcome to the FastAPI Backend"}

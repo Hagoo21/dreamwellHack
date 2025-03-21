@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import axios from 'axios';
 import ProgressBar from './components/ProgressBar';
 import PromptBar from './components/PromptBar';
-import UserProfile from './components/UserProfile';
 import ResultsArea from './components/ResultsArea';
 import './App.css';
 
-function App({redirectUri, logoutUri}) {
+function App() {
   const [results, setResults] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [currentStreamingText, setCurrentStreamingText] = useState('');
@@ -29,7 +27,7 @@ function App({redirectUri, logoutUri}) {
     console.log("Bracket matches:", bracketMatches);
     
     for (const match of bracketMatches) {
-      const [_, hours, minutes, seconds] = match;
+      const [, hours, minutes, seconds] = match;
       const formattedHours = hours.padStart(2, '0');
       const formattedMinutes = minutes.padStart(2, '0');
       const formattedSeconds = seconds.padStart(2, '0');
@@ -45,38 +43,6 @@ function App({redirectUri, logoutUri}) {
     console.log("Extracted timestamps:", result);
     return result;
   };
-
-  const {
-    loginWithPopup,
-    logout,
-    isAuthenticated,
-    user,
-    getAccessTokenSilently,
-    isLoading,
-  } = useAuth0();
-
-  useEffect(() => {
-    const updateUserInBackend = async () => {
-      if (isAuthenticated && user) {
-        try {
-          await axios.post(
-            process.env.REACT_APP_AUTH0_API_IDENTIFIER + "/public/add_user",
-            {
-              id: user.sub,
-              name: user.name,
-              email: user.email,
-              picture: user.picture,
-            }
-          );
-          console.log("User data successfully updated in backend.");
-        } catch (error) {
-          console.error("Error updating user in backend:", error);
-        }
-      }
-    };
-
-    updateUserInBackend();
-  }, [isAuthenticated, user]);
 
   useEffect(() => {
     let messageListener;
@@ -165,7 +131,6 @@ function App({redirectUri, logoutUri}) {
           if (line.startsWith('data: ')) {
             const data = line.slice(5).trim();
             
-            // Handle the [DONE] message separately
             if (data === '[DONE]') {
               setIsStreaming(false);
               console.log("Full response before timestamp extraction:", fullResponse);
@@ -185,12 +150,12 @@ function App({redirectUri, logoutUri}) {
               break;
             }
 
-            // Only try to parse JSON for actual content
             try {
               const parsed = JSON.parse(data);
               if (parsed.content) {
-                fullResponse += parsed.content;
-                setCurrentStreamingText(prev => prev + parsed.content);
+                const currentContent = parsed.content;
+                fullResponse += currentContent;
+                setCurrentStreamingText(prev => prev + currentContent);
               }
             } catch (e) {
               console.error('Error parsing streaming data:', e, 'Raw data:', data);
@@ -209,43 +174,13 @@ function App({redirectUri, logoutUri}) {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      await loginWithPopup({
-        redirectUri: redirectUri,
-      });
-      console.log("Logged in user:", user);
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="LoginPopup">
-        <div className="LoginModal">
-          <img src="https://hackville.s3.us-east-1.amazonaws.com/hacklogo.png" alt="App Logo" className="LoginLogo" />
-          <h2>Welcome to Xccel</h2>
-          <p>Please log in to continue.</p>
-          <button onClick={handleLogin}>Log In</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="App">
       <ProgressBar timestamps={timestamps} />
-      <UserProfile user={user} logout={logout} logoutUri={logoutUri}/>
       <ResultsArea 
         results={results} 
         isStreaming={isStreaming}
         currentStreamingText={currentStreamingText}
-        user={user}
         isProcessingTranscript={isProcessingTranscript}
       />
       <PromptBar onSubmit={handlePromptSubmit} />
