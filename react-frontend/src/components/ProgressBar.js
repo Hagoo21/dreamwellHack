@@ -10,46 +10,23 @@ const ProgressBar = ({ timestamps = [] }) => {
   const [videoDuration, setVideoDuration] = useState(0);
 
   useEffect(() => {
-    const isExtension = typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
     let interval;
-
-    if (isExtension) {
-      interval = setInterval(() => {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-          const url = tabs[0].url;
-          if (url.includes('youtube.com/watch')) {
-            setHasVideo(true);
-            setVideoUrl(url);
-            chrome.tabs.sendMessage(tabs[0].id, {action: "getVideoTime"}, response => {
-              if (response) {
-                setCurrentTime(response.currentTime);
-                setProgress(response.progress);
-                setVideoDuration(response.duration);
-                console.log("Video duration:", response.duration);
-              }
-            });
-          } else {
-            setHasVideo(false);
-            setVideoUrl('');
-          }
-        });
-      }, 1000);
-    } else {
-      setHasVideo(true);
-      setVideoUrl('https://www.youtube.com/watch?v=example');
-      setVideoDuration(600);
-      
-      interval = setInterval(() => {
-        setProgress(prev => (prev + 1) % 100);
-        const totalSeconds = Math.floor((progress / 100) * 600);
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        setCurrentTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-      }, 1000);
-    }
+    
+    // Web app behavior
+    setHasVideo(true);
+    setVideoUrl('https://www.youtube.com/watch?v=example');
+    setVideoDuration(600);
+    
+    interval = setInterval(() => {
+      setProgress(prev => (prev + 1) % 100);
+      const totalSeconds = Math.floor((progress / 100) * 600);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      setCurrentTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [progress]);
 
   const timestampToSeconds = (timestamp) => {
     const parts = timestamp.split(':').map(Number);
