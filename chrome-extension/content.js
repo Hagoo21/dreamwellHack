@@ -29,7 +29,7 @@ function getYoutubeVideoId(url) {
 function getVideoTime() {
   const video = document.querySelector('video');
   if (video) {
-    const currentTime = formatTime(video.currentTime);
+    const currentTime = video.currentTime;  // Send raw seconds
     const duration = video.duration;
     const progress = (video.currentTime / duration) * 100;
     const videoId = getYoutubeVideoId(window.location.href);

@@ -71,14 +71,10 @@ function App() {
             chrome.tabs.sendMessage(tabs[0].id, {action: "getVideoTime"}, response => {
               if (response) {
                 console.log("Received video time response:", response);
-                // Ensure we're working with numbers
-                const currentTime = parseFloat(response.currentTime) || 0;
-                const progress = parseFloat(response.progress) || 0;
-                const duration = parseFloat(response.duration) || 0;
-                
-                setCurrentTime(currentTime);
-                setProgress(progress);
-                setVideoDuration(duration);
+                // Values are now raw numbers, no need for parsing
+                setCurrentTime(response.currentTime);
+                setProgress(response.progress);
+                setVideoDuration(response.duration);
               }
             });
           }
